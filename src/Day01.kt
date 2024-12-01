@@ -1,21 +1,28 @@
+import kotlin.math.abs
+
 fun main() {
-    fun part1(input: List<String>): Int {
-        return input.size
+    fun loadInLocations(): Pair<List<Int>, List<Int>> {
+        val locationList1 = mutableListOf<Int>()
+        val locationList2 = mutableListOf<Int>()
+        readInput("Day01").map { line ->
+            val (location1, location2) = line.split("   ")
+            locationList1.add(location1.toInt())
+            locationList2.add(location2.toInt())
+        }
+        return Pair(locationList1, locationList2)
     }
 
-    fun part2(input: List<String>): Int {
-        return input.size
+    fun part1(): Int {
+        val (locations1, locations2) = loadInLocations()
+        val sortedLocations1 = locations1.sorted()
+        val sortedLocations2 = locations2.sorted()
+        var totalDistanceDelta = 0
+        for (i in sortedLocations1.indices) {
+            totalDistanceDelta += abs(sortedLocations1[i] - sortedLocations2[i])
+        }
+        return totalDistanceDelta
     }
 
-    // Test if implementation meets criteria from the description, like:
-    check(part1(listOf("test_input")) == 1)
-
-    // Or read a large test input from the `src/Day01_test.txt` file:
-    val testInput = readInput("Day01_test")
-    check(part1(testInput) == 1)
-
-    // Read the input from the `src/Day01.txt` file.
-    val input = readInput("Day01")
-    part1(input).println()
-    part2(input).println()
+    val part1Answer = part1()
+    println("Part 1 total distance delta: $part1Answer")
 }
