@@ -22,6 +22,10 @@ fun main() {
         first > second
       }
     }
+
+    fun isSafe(): Boolean {
+      return isGraduallyChanging() && (isOnlyIncreasing() || isOnlyDecreasing())
+    }
   }
 
   fun getReports(): List<Report> {
@@ -33,9 +37,24 @@ fun main() {
 
   fun part1(): Int {
     val reports = getReports()
-    return reports.count { it.isGraduallyChanging() && (it.isOnlyIncreasing() || it.isOnlyDecreasing()) }
+    return reports.count { it.isSafe() }
   }
 
   val part1Answer = part1()
   println("$part1Answer safe reports for part 1")
+
+  fun part2(): Int {
+    val reports = getReports()
+    return reports.count { report ->
+      for (i in report.levels.indices) {
+        if (Report(report.levels.toMutableList().apply { removeAt(i) }).isSafe()) {
+          return@count true
+        }
+      }
+      false
+    }
+  }
+
+  val part2Answer = part2()
+  println("$part2Answer safe reports for part 2 with error dampener")
 }
