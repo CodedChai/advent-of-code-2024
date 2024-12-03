@@ -1,31 +1,17 @@
-import kotlin.math.abs
-
 fun main() {
 
   data class Report(
     val levels: List<Int>,
-  ) {
-    fun isGraduallyChanging(): Boolean {
-      return levels.windowed(2).all { (first, second) ->
-        abs(first - second) in setOf(1, 2, 3)
-      }
-    }
+  )
 
-    fun isOnlyIncreasing(): Boolean {
-      return levels.windowed(2).all { (first, second) ->
-        first < second
-      }
+  fun Collection<Int>.isWithinExpectedRange(): Boolean {
+    return windowed(2).all { (first, second) ->
+      first - second in setOf(1, 2, 3)
     }
+  }
 
-    fun isOnlyDecreasing(): Boolean {
-      return levels.windowed(2).all { (first, second) ->
-        first > second
-      }
-    }
-
-    fun isSafe(): Boolean {
-      return isGraduallyChanging() && (isOnlyIncreasing() || isOnlyDecreasing())
-    }
+  fun Collection<Int>.isSafe(): Boolean {
+    return isWithinExpectedRange() || reversed().isWithinExpectedRange()
   }
 
   fun getReports(): List<Report> {
@@ -37,7 +23,7 @@ fun main() {
 
   fun part1(): Int {
     val reports = getReports()
-    return reports.count { it.isSafe() }
+    return reports.count { it.levels.isSafe() }
   }
 
   val part1Answer = part1()
@@ -47,7 +33,7 @@ fun main() {
     val reports = getReports()
     return reports.count { report ->
       for (i in report.levels.indices) {
-        if (Report(report.levels.toMutableList().apply { removeAt(i) }).isSafe()) {
+        if (report.levels.toMutableList().apply { removeAt(i) }.isSafe()) {
           return@count true
         }
       }
