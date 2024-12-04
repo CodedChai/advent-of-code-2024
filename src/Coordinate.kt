@@ -9,4 +9,8 @@ data class Coordinate(
   operator fun plus(other: Direction): Coordinate {
     return this + other.movementCoordinate
   }
+
+  operator fun times(other: Int): Coordinate {
+    return Coordinate(this.x * other, this.y * other)
+  }
 }

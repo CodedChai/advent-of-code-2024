@@ -54,6 +54,26 @@ fun main() {
     return totalFound
   }
 
+  fun part1take2(): Int {
+    val crossword = readInput()
+    val remainingWord = "MAS"
+    var totalFound = 0
+    for (x in crossword.xIndices) {
+      for (y in crossword.yIndices) {
+        if (crossword.get(x, y)?.equals('X', true) == true) {
+          totalFound += Direction.entries.count { direction ->
+            remainingWord.indices.all { index ->
+              val coordToCheck = Coordinate(x, y) + direction.movementCoordinate * (index + 1)
+              crossword.get(coordToCheck)?.equals(remainingWord[index], true) == true
+            }
+          }
+        }
+      }
+    }
+
+    return totalFound
+  }
+
   fun part2(): Int {
     val crossword = readInput()
     val charsToFind = listOf('M', 'S')
@@ -81,5 +101,6 @@ fun main() {
   }
 
   println("Part 1 found ${part1()} words")
+  println("Part 1 take 2 found ${part1take2()} words")
   println("Part 2 found ${part2()} words")
 }
