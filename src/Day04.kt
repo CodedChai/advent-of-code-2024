@@ -54,5 +54,32 @@ fun main() {
     return totalFound
   }
 
+  fun part2(): Int {
+    val crossword = readInput()
+    val charsToFind = listOf('M', 'S')
+    var totalFound = 0
+    for (x in crossword.xIndices) {
+      for (y in crossword.yIndices) {
+        val currentCoordinate = Coordinate(x, y)
+        if (crossword.get(currentCoordinate)?.equals('A', true) == true) {
+          val validLeft = listOfNotNull(
+            crossword.get(currentCoordinate + Direction.LEFT_UP),
+            crossword.get(currentCoordinate + Direction.RIGHT_DOWN),
+          ).containsAll(charsToFind)
+          val validRight = listOfNotNull(
+            crossword.get(currentCoordinate + Direction.RIGHT_UP),
+            crossword.get(currentCoordinate + Direction.LEFT_DOWN),
+          ).containsAll(charsToFind)
+          if (validRight && validLeft) {
+            totalFound++
+          }
+        }
+      }
+    }
+
+    return totalFound
+  }
+
   println("Part 1 found ${part1()} words")
+  println("Part 2 found ${part2()} words")
 }

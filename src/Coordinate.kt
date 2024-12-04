@@ -5,4 +5,8 @@ data class Coordinate(
   operator fun plus(other: Coordinate): Coordinate {
     return Coordinate(x + other.x, y + other.y)
   }
+
+  operator fun plus(other: Direction): Coordinate {
+    return this + other.movementCoordinate
+  }
 }
