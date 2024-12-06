@@ -1,5 +1,5 @@
 data class Grid<T>(
-  val coordinatesToValues: Map<Coordinate, T>,
+  val coordinatesToValues: HashMap<Vec2, T>,
 ) {
   val xIndices = run {
     val xCoords = coordinatesToValues.keys.map { it.x }
@@ -11,18 +11,18 @@ data class Grid<T>(
     yCoords.min()..yCoords.max()
   }
 
-  fun get(coordinate: Coordinate): T? {
-    return coordinatesToValues[coordinate]
+  operator fun get(vec2: Vec2): T? {
+    return coordinatesToValues[vec2]
   }
 
   fun get(x: Int, y: Int): T? {
-    return get(Coordinate(x, y))
+    return get(Vec2(x, y))
   }
 
-  fun printGrid() {
-    for (x in xIndices) {
-      for (y in yIndices) {
-        print(get(x, y))
+  fun visualize() {
+    for (y in yIndices) {
+      for (x in xIndices) {
+        print(get(x, y).toString())
       }
       print("\n")
     }

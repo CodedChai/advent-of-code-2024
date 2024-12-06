@@ -8,12 +8,22 @@ import kotlin.io.path.readText
  */
 fun readInput(name: String) = Path("src/$name.txt").readText().trim().lines()
 
+fun readGridInput(name: String): Grid<Char> {
+  val input = readInput(name).flatMapIndexed { yIndex, line ->
+    line.mapIndexed { xIndex, char ->
+      Vec2(xIndex, yIndex) to char
+    }
+  }.toMap(hashMapOf())
+
+  return Grid(input)
+}
+
 /**
  * Converts string to md5 hash.
  */
 fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteArray()))
-    .toString(16)
-    .padStart(32, '0')
+  .toString(16)
+  .padStart(32, '0')
 
 /**
  * The cleaner shorthand for printing output.

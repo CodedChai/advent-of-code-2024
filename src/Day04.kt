@@ -1,30 +1,21 @@
 fun main() {
-  fun readInput(): Grid<Char> {
-    val input = readInput("Day04").flatMapIndexed { yIndex, line ->
-      line.mapIndexed { xIndex, char ->
-        Coordinate(xIndex, yIndex) to char
-      }
-    }.toMap()
-
-    return Grid(input)
-  }
 
   data class Check(
     val direction: Direction,
     val word: String,
-    val currentCoordinate: Coordinate,
+    val currentVec2: Vec2,
   )
 
   fun part1Recursion(check: Check, crossword: Grid<Char>): Int {
     if (check.word.isEmpty()) {
       return 1
     }
-    val coordToCheck = check.currentCoordinate + check.direction.movementCoordinate
-    if (crossword.get(coordToCheck)?.equals(check.word.first(), true) == true) {
+    val coordToCheck = check.currentVec2 + check.direction.movementVec2
+    if (crossword[coordToCheck]?.equals(check.word.first(), true) == true) {
       val newCheck = Check(
         direction = check.direction,
         word = check.word.substring(1),
-        currentCoordinate = coordToCheck,
+        currentVec2 = coordToCheck,
       )
       return part1Recursion(newCheck, crossword)
     } else {
@@ -33,7 +24,7 @@ fun main() {
   }
 
   fun part1(): Int {
-    val crossword = readInput()
+    val crossword = readGridInput("Day04")
     val remainingWord = "MAS"
     var totalFound = 0
     for (x in crossword.xIndices) {
@@ -43,7 +34,7 @@ fun main() {
             val check = Check(
               direction,
               remainingWord,
-              Coordinate(x, y)
+              Vec2(x, y)
             )
             part1Recursion(check, crossword)
           }
@@ -55,7 +46,8 @@ fun main() {
   }
 
   fun part1take2(): Int {
-    val crossword = readInput()
+    val crossword = readGridInput("Day04")
+    crossword.visualize()
     val remainingWord = "MAS"
     var totalFound = 0
     for (x in crossword.xIndices) {
@@ -63,7 +55,7 @@ fun main() {
         if (crossword.get(x, y)?.equals('X', true) == true) {
           totalFound += Direction.entries.count { direction ->
             remainingWord.indices.all { index ->
-              val coordToCheck = Coordinate(x, y) + direction.movementCoordinate * (index + 1)
+              val coordToCheck = Vec2(x, y) + direction.movementVec2 * (index + 1)
               crossword.get(coordToCheck)?.equals(remainingWord[index], true) == true
             }
           }
@@ -75,20 +67,20 @@ fun main() {
   }
 
   fun part2(): Int {
-    val crossword = readInput()
+    val crossword = readGridInput("Day04")
     val charsToFind = listOf('M', 'S')
     var totalFound = 0
     for (x in crossword.xIndices) {
       for (y in crossword.yIndices) {
-        val currentCoordinate = Coordinate(x, y)
-        if (crossword.get(currentCoordinate)?.equals('A', true) == true) {
+        val currentVec2 = Vec2(x, y)
+        if (crossword.get(currentVec2)?.equals('A', true) == true) {
           val validLeft = listOfNotNull(
-            crossword.get(currentCoordinate + Direction.LEFT_UP),
-            crossword.get(currentCoordinate + Direction.RIGHT_DOWN),
+            crossword.get(currentVec2 + Direction.LEFT_UP),
+            crossword.get(currentVec2 + Direction.RIGHT_DOWN),
           ).containsAll(charsToFind)
           val validRight = listOfNotNull(
-            crossword.get(currentCoordinate + Direction.RIGHT_UP),
-            crossword.get(currentCoordinate + Direction.LEFT_DOWN),
+            crossword.get(currentVec2 + Direction.RIGHT_UP),
+            crossword.get(currentVec2 + Direction.LEFT_DOWN),
           ).containsAll(charsToFind)
           if (validRight && validLeft) {
             totalFound++
