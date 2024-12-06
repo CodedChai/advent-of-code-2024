@@ -19,16 +19,12 @@ fun main() {
   }
 
 
-  fun visualize(map: Grid<TileState>, guards: List<Guard>) {
-    val minGuardXIndex = guards.minOf { it.position.x }
-    val maxGuardXIndex = guards.maxOf { it.position.x }
-    val minGuardYIndex = guards.minOf { it.position.y }
-    val maxGuardYIndex = guards.maxOf { it.position.y }
-    val xMin = minOf(minGuardXIndex, 0)
-    val xMax = maxOf(maxGuardXIndex, map.xIndices.last)
-    val yMin = minOf(minGuardYIndex, 0)
-    val yMax = maxOf(maxGuardYIndex, map.yIndices.last)
-    val guardMap = guards.associateBy { it.position }
+  fun visualize(map: Grid<TileState>, guard: Guard) {
+    val xMin = minOf(guard.position.x, 0)
+    val xMax = maxOf(guard.position.x, map.xIndices.last)
+    val yMin = minOf(guard.position.y, 0)
+    val yMax = maxOf(guard.position.y, map.yIndices.last)
+    val guardMap = mapOf(guard.position to guard)
     for (y in yMin..yMax) {
       for (x in xMin..xMax) {
         val position = Vec2(x, y)
@@ -44,34 +40,36 @@ fun main() {
     print("\n")
   }
 
-  fun part1(): Int {
-    val (map, guard) = readInput()
-    var guards = listOf(guard)
-    while (guards.any { it.isActive }) {
+  fun getInitialPatrolMapAndFinalGuard(mapInput: Grid<TileState>, guard: Guard): Pair<Grid<TileState>, Guard> {
+    val map = mapInput.copy()
+    var currentGuard = guard
+    while (currentGuard.isActive) {
       // Process step
-      val newGuards = guards.map { guard ->
-        // Process each guard individually
-        val positionToMoveTo = guard.getPositionToMoveTo()
-        val mapTile = map[positionToMoveTo]
-        when (mapTile) {
-          null -> {
-            map.coordinatesToValues[guard.position] = TileState.VISITED
-            guard.setInactive()
-          }
+      val positionToMoveTo = currentGuard.getPositionToMoveTo()
+      val mapTile = map[positionToMoveTo]
+      currentGuard = when (mapTile) {
+        null -> {
+          map.coordinatesToValues[currentGuard.position] = TileState.VISITED
+          currentGuard.setInactive()
+        }
 
-          TileState.BLOCKADE -> guard.rotate()
-          TileState.FREE, TileState.VISITED, TileState.GUARD -> {
-            map.coordinatesToValues[guard.position] = TileState.VISITED
-            guard.move()
-          }
+        TileState.BLOCKADE -> currentGuard.rotate()
+        TileState.FREE, TileState.VISITED, TileState.GUARD -> {
+          map.coordinatesToValues[currentGuard.position] = TileState.VISITED
+          currentGuard.move()
         }
       }
-
-      guards = newGuards
     }
 
-    visualize(map, guards)
-    return map.coordinatesToValues.values.count { it == TileState.VISITED }
+    return mapInput to guard
+  }
+
+  fun part1(): Int {
+    val (map, guard) = readInput()
+
+    val (finalMap, finalGuard) = getInitialPatrolMapAndFinalGuard(map, guard)
+    visualize(finalMap, finalGuard)
+    return finalMap.coordinatesToValues.values.count { it == TileState.VISITED }
   }
 
   part1().println()
