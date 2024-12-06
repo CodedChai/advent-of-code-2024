@@ -1,6 +1,11 @@
 import day06.Guard
 import day06.TileState
 import day06.VisitedInfo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.system.measureTimeMillis
 
 fun main() {
 
@@ -146,6 +151,35 @@ fun main() {
     return viableBlockades
   }
 
+  fun part2Coroutine(): Int {
+    val (map, guard) = readInput()
+    val (patrolMap, _) = getInitialPatrolMapAndFinalGuard(map.deepCopy(), guard)
+
+    val potentialPositionsToBlockade = patrolMap.coordinatesToValues.entries.filter { (position, tile) ->
+      tile == TileState.VISITED && position != guard.position
+    }.map { it.key }
+
+    val viableBlockades = AtomicInteger(0)
+    runBlocking(Dispatchers.Default) {
+      potentialPositionsToBlockade.forEach { potentialPositionToBlockade ->
+        launch {
+          val newMap = map.copy(coordinatesToValues = map.coordinatesToValues.map {
+            if (it.key == potentialPositionToBlockade) {
+              it.key to TileState.BLOCKADE
+            } else {
+              it.key to it.value
+            }
+          }.toMap(hashMapOf()))
+          if (getLoopingPatrolPath(newMap, guard) != null) {
+            viableBlockades.incrementAndGet()
+          }
+        }
+      }
+    }
+
+    return viableBlockades.get()
+  }
   part1().println()
-  part2().println()
+  measureTimeMillis { part2() }.println()
+  measureTimeMillis { part2Coroutine() }.println()
 }
