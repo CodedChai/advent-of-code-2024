@@ -16,14 +16,20 @@ fun main() {
     return dependencies to pagesToProduce.map { it }
   }
 
+  fun List<Int>.isValid(
+    dependencies: HashMap<Int, HashSet<Int>>,
+  ): Boolean {
+    return this.indices.drop(1).all { index ->
+      val page = this[index]
+      val dependenciesForPage = dependencies[page] ?: return@all true
+      this.subList(0, index).none { it in dependenciesForPage }
+    }
+  }
+
   fun part1(): Int {
     val (dependencies, pagesToProduce) = readInput()
     val validManuals = pagesToProduce.filter { manual ->
-      manual.indices.drop(1).all { index ->
-        val page = manual[index]
-        val dependenciesForPage = dependencies[page] ?: return@all true
-        manual.subList(0, index - 1).none { it in dependenciesForPage }
-      }
+      manual.isValid(dependencies)
     }
 
     return validManuals.sumOf { manual ->
@@ -31,6 +37,36 @@ fun main() {
     }
   }
 
-  part1().println()
+  fun part2(): Int {
+    val (dependencies, pagesToProduce) = readInput()
+    val invalidManuals = pagesToProduce.filterNot { manual ->
+      manual.isValid(dependencies)
+    }
 
+    val correctedManuals = invalidManuals.map { invalidManual ->
+      val manual = invalidManual.toMutableList()
+      while (!manual.isValid(dependencies)) {
+        for (outerIndex in manual.indices.drop(1)) {
+          val currentPage = manual[outerIndex]
+          val dependenciesForPage = dependencies[currentPage] ?: continue
+          innerLoop@ for (innerIndex in 0 until outerIndex) {
+            val earlierPage = manual[innerIndex]
+            if (earlierPage in dependenciesForPage) {
+              manual[innerIndex] = currentPage
+              manual[outerIndex] = earlierPage
+              break@innerLoop
+            }
+          }
+        }
+      }
+      manual.toList()
+    }
+    correctedManuals.map { it.println() }
+    return correctedManuals.sumOf { manual ->
+      manual[manual.size / 2]
+    }
+  }
+
+  part1().println()
+  part2().println()
 }
