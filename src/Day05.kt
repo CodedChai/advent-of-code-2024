@@ -18,26 +18,15 @@ fun main() {
 
   fun part1(): Int {
     val (dependencies, pagesToProduce) = readInput()
-    val validManuals = pagesToProduce.mapNotNull { manual ->
-      var isInvalid = false
-      for (i in 1 until manual.size) {
-        val page = manual[i]
-        val dependenciesForPage = dependencies[page]
-        if (dependenciesForPage != null) {
-          val potentiallyInvalidNums = manual.filter { it in dependenciesForPage }
-          if (potentiallyInvalidNums.all { it in manual.subList(i, manual.size) }) {
-            continue
-          } else {
-            isInvalid = true
-          }
-        }
-      }
-      if (isInvalid) {
-        null
-      } else {
-        manual
+    val validManuals = pagesToProduce.filter { manual ->
+      manual.indices.drop(1).all { index ->
+        val page = manual[index]
+        val dependenciesForPage = dependencies[page] ?: return@all true
+        val potentiallyInvalidNums = manual.filter { it in dependenciesForPage }
+        potentiallyInvalidNums.any { it in manual.subList(index, manual.size) }
       }
     }
+
     return validManuals.sumOf { manual ->
       manual[manual.size / 2]
     }
