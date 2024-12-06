@@ -22,8 +22,7 @@ fun main() {
       manual.indices.drop(1).all { index ->
         val page = manual[index]
         val dependenciesForPage = dependencies[page] ?: return@all true
-        val potentiallyInvalidNums = manual.filter { it in dependenciesForPage }
-        potentiallyInvalidNums.all { it in manual.subList(index, manual.size) }
+        manual.subList(0, index - 1).none { it in dependenciesForPage }
       }
     }
 
