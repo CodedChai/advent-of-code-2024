@@ -23,7 +23,7 @@ fun main() {
         val page = manual[index]
         val dependenciesForPage = dependencies[page] ?: return@all true
         val potentiallyInvalidNums = manual.filter { it in dependenciesForPage }
-        potentiallyInvalidNums.any { it in manual.subList(index, manual.size) }
+        potentiallyInvalidNums.all { it in manual.subList(index, manual.size) }
       }
     }
 
