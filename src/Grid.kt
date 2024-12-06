@@ -11,6 +11,10 @@ data class Grid<T>(
     yCoords.min()..yCoords.max()
   }
 
+  fun deepCopy(): Grid<T> {
+    return this.copy(coordinatesToValues = this.coordinatesToValues.map { it.key to it.value }.toMap(hashMapOf()))
+  }
+
   operator fun get(vec2: Vec2): T? {
     return coordinatesToValues[vec2]
   }
