@@ -180,6 +180,6 @@ fun main() {
     return viableBlockades.get()
   }
   part1().println()
-  measureTimeMillis { part2() }.println()
-  measureTimeMillis { part2Coroutine() }.println()
+  measureTimeMillis { part2().println() }.println()
+  measureTimeMillis { part2Coroutine().println() }.println()
 }
