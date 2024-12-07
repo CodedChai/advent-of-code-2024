@@ -1,3 +1,9 @@
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+import kotlin.system.measureTimeMillis
+
 private data class TestFormula(
   val result: Long,
   val values: List<Long>,
@@ -37,42 +43,46 @@ fun main() {
   fun part1And2(): Long {
     val formulasToTest = readInput()
 
-    return formulasToTest.sumOf { testFormula ->
-      val firstOpsToCheck = (0 until testFormula.values.size - 1).map { Operator.entries[0] }
-      val visited = hashSetOf<OpsToCheck>()
-      val queue = ArrayDeque(listOf(OpsToCheck(firstOpsToCheck)))
-      while (queue.isNotEmpty()) {
-        val opsToCheck = queue.removeFirst()
-        if (!visited.add(opsToCheck)) {
-          continue
-        }
-        if (testFormula.isValid(opsToCheck.ops)) {
-          return@sumOf testFormula.result
-        }
-
-        val opsToReplace = opsToCheck.ops.mapIndexedNotNull { index, operator ->
-          if (operator.ordinal < Operator.entries.size - 1) {
-            index to Operator.entries[operator.ordinal + 1]
-          } else {
-            null
-          }
-        }
-
-        val moreOpsToCheck = opsToReplace.map { (index, op) ->
-          opsToCheck.ops.mapIndexed { oldIndex, oldOp ->
-            if (oldIndex == index) {
-              op
-            } else {
-              oldOp
+    return runBlocking(Dispatchers.Default) {
+      formulasToTest.map { testFormula ->
+        async {
+          val firstOpsToCheck = (0 until testFormula.values.size - 1).map { Operator.entries[0] }
+          val visited = hashSetOf<OpsToCheck>()
+          val queue = ArrayDeque(listOf(OpsToCheck(firstOpsToCheck)))
+          while (queue.isNotEmpty()) {
+            val opsToCheck = queue.removeFirst()
+            if (!visited.add(opsToCheck)) {
+              continue
             }
-          }.let { OpsToCheck(it) }
-        }.filter { it !in visited }
+            if (testFormula.isValid(opsToCheck.ops)) {
+              return@async testFormula.result
+            }
 
-        queue.addAll(moreOpsToCheck)
-      }
-      0L
+            val opsToReplace = opsToCheck.ops.mapIndexedNotNull { index, operator ->
+              if (operator.ordinal < Operator.entries.size - 1) {
+                index to Operator.entries[operator.ordinal + 1]
+              } else {
+                null
+              }
+            }
+
+            val moreOpsToCheck = opsToReplace.map { (index, op) ->
+              opsToCheck.ops.mapIndexed { oldIndex, oldOp ->
+                if (oldIndex == index) {
+                  op
+                } else {
+                  oldOp
+                }
+              }.let { OpsToCheck(it) }
+            }.filter { it !in visited }
+
+            queue.addAll(moreOpsToCheck)
+          }
+          0L
+        }
+      }.awaitAll().sum()
     }
   }
 
-  part1And2().println()
+  measureTimeMillis { part1And2().println() }.println()
 }
