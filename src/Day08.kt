@@ -60,5 +60,33 @@ fun main() {
     return allAntinodes.size
   }
 
+  fun createAntinodes(map: Grid<Char>, position: Vec2, deltaVector: Vec2): List<Vec2> {
+    val attemptedAntinode = position + deltaVector
+    if (attemptedAntinode.x !in map.xIndices || attemptedAntinode.y !in map.yIndices) {
+      return emptyList()
+    }
+
+    return createAntinodes(map, attemptedAntinode, deltaVector) + attemptedAntinode
+  }
+
+  fun part2(): Int {
+    val map = readGridInput("Day08")
+    val antennaToNodes = transformToAntennaToNodes(map)
+
+    val allAntinodes = antennaToNodes.entries.flatMapTo(hashSetOf()) { (antenna, positions) ->
+      // Standardize top to bottom, left to right
+      val allPairs = antennaPositionPairs(positions.sortedBy { it.x }.sortedByDescending { it.y })
+      allPairs.flatMap { (position1, position2) ->
+        // do top left - bottom right
+        val deltaVector = position1 - position2
+        createAntinodes(map, position1, deltaVector) + createAntinodes(map, position1, deltaVector * -1) + position1
+      }
+    }
+
+    visualize(map, allAntinodes)
+    return allAntinodes.size
+  }
+
   part1().println()
+  part2().println()
 }
