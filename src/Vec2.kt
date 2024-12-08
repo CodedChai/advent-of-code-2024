@@ -13,4 +13,8 @@ data class Vec2(
   operator fun times(other: Int): Vec2 {
     return Vec2(this.x * other, this.y * other)
   }
+
+  operator fun minus(other: Vec2): Vec2 {
+    return Vec2(x - other.x, y - other.y)
+  }
 }
