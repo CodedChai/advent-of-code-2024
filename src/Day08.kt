@@ -4,8 +4,7 @@ fun main() {
   // From there it's finding the delta vector of each pair in the letter and then using that delta to create the antinodes on each side
   // Antinodes will simply be HashSet<Vec2>
   // I will want a way to visualize this
-
-
+  
   fun transformToAntennaToNodes(map: Grid<Char>) = map.coordinatesToValues.entries.filter { it.value != '.' }
     .groupBy { it.value }
     .map { (key, value) ->
