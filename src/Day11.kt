@@ -1,3 +1,7 @@
+import arrow.core.MemoizedDeepRecursiveFunction
+import arrow.core.memoize
+import kotlin.system.measureTimeMillis
+
 private data class Stone(
   val value: Long,
   val iterationsRemaining: Int,
@@ -56,15 +60,12 @@ fun main() {
   val stoneCache = mutableMapOf<Stone, Long>() // Stone to final sum value
 
   fun calculateStone(stone: Stone): Long {
-    val cachedStone = stoneCache[stone]
-    if (cachedStone != null) {
-      return cachedStone
-    }
-    if (stone.iterationsRemaining == 0) {
-      return 1
-    }
-    return stone.iterateStone().sumOf { calculateStone(it) }.also {
-      stoneCache[stone] = it
+    return stoneCache.getOrPut(stone) {
+      if (stone.iterationsRemaining == 0) {
+        return 1
+      } else {
+        stone.iterateStone().sumOf { calculateStone(it) }
+      }
     }
   }
 
@@ -76,6 +77,45 @@ fun main() {
     }
   }
 
+  fun calculateStoneArrowMemoized(stone: Stone): Long {
+    return if (stone.iterationsRemaining == 0) {
+      return 1
+    } else {
+      stone.iterateStone().sumOf { calculateStone(it) }
+    }
+  }
+
+  val arrowMemoized = ::calculateStoneArrowMemoized.memoize()
+
+  val calculateStoneWorker = MemoizedDeepRecursiveFunction<Stone, Long> { stone ->
+    if (stone.iterationsRemaining == 0) {
+      1L
+    } else {
+      stone.iterateStone().sumOf { callRecursive(it) }
+    }
+  }
+
+  fun arrowMemoizedSolution(timesToBlink: Int): Long {
+    val stones = readInput()
+    return stones.sumOf { stoneValue ->
+      val stone = Stone(stoneValue, timesToBlink)
+      arrowMemoized(stone)
+    }
+  }
+
+  fun arrowDeepRecMemoizedSolution(timesToBlink: Int): Long {
+    val stones = readInput()
+    return stones.sumOf { stoneValue ->
+      val stone = Stone(stoneValue, timesToBlink)
+      calculateStoneWorker(stone)
+    }
+  }
+
   part1(25).println()
   part2(75).println()
+  measureTimeMillis { part2(75) }.println()
+  measureTimeMillis { arrowMemoizedSolution(75) }.println()
+  measureTimeMillis { arrowDeepRecMemoizedSolution(75) }.println()
+  println("Arrow memoized: ${arrowMemoizedSolution(75)}")
+  println("Arrow deep recursive memoized: ${arrowDeepRecMemoizedSolution(75)}")
 }
