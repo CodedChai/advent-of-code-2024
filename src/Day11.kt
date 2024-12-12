@@ -37,7 +37,6 @@ fun main() {
     var stones = readInput()
 
     repeat(timesToBlink) {
-      println("Current iteration: $it")
       stones = stones.flatMap { stone ->
         when {
           stone == 0L -> listOf(1L)
@@ -113,9 +112,8 @@ fun main() {
 
   part1(25).println()
   part2(75).println()
-  measureTimeMillis { part2(75) }.println()
-  measureTimeMillis { arrowMemoizedSolution(75) }.println()
-  measureTimeMillis { arrowDeepRecMemoizedSolution(75) }.println()
-  println("Arrow memoized: ${arrowMemoizedSolution(75)}")
-  println("Arrow deep recursive memoized: ${arrowDeepRecMemoizedSolution(75)}")
+  val part2Time = measureTimeMillis { part2(75) }
+  val memoizeTime = measureTimeMillis { arrowMemoizedSolution(75) }
+  val deepRecTime = measureTimeMillis { arrowDeepRecMemoizedSolution(75) }
+  println("$part2Time ms - $memoizeTime ms - $deepRecTime ms")
 }
