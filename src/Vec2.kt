@@ -1,6 +1,6 @@
 data class Vec2(
-  val x: Int,
-  val y: Int,
+  val x: Long,
+  val y: Long,
 ) {
   operator fun plus(other: Vec2): Vec2 {
     return Vec2(x + other.x, y + other.y)

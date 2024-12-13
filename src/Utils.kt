@@ -11,7 +11,7 @@ fun readInput(name: String) = Path("src/$name.txt").readText().trim().lines()
 fun readGridInput(name: String): Grid<Char> {
   val input = readInput(name).flatMapIndexed { yIndex, line ->
     line.mapIndexed { xIndex, char ->
-      Vec2(xIndex, yIndex) to char
+      Vec2(xIndex.toLong(), yIndex.toLong()) to char
     }
   }.toMap(hashMapOf())
 

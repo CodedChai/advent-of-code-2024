@@ -19,7 +19,7 @@ data class Grid<T>(
     return coordinatesToValues[vec2]
   }
 
-  fun get(x: Int, y: Int): T? {
+  fun get(x: Long, y: Long): T? {
     return get(Vec2(x, y))
   }
 
