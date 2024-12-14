@@ -68,7 +68,32 @@ fun main() {
 
   }
 
+  val neighborDirs = listOf(Direction.UP, Direction.LEFT, Direction.DOWN, Direction.RIGHT)
+
+  fun countNeighbors(robotPositions: Set<Vec2>): Int {
+    return robotPositions.sumOf { pos ->
+      neighborDirs.count { neighbor -> (pos + neighbor) in robotPositions }
+    }
+  }
+
+  fun part2(maxCoords: Vec2): Long {
+    val initialRobots = readInput()
+    // I can break out of this once I have a cycle
+    val maxSecondsUntilCycle = maxCoords.x * maxCoords.y
+    val bestSecond = (0..maxSecondsUntilCycle).maxBy { second ->
+      val robotsAtSecond = initialRobots.map { it.move(second, maxCoords) }
+      val robotCountAtPositions = robotsAtSecond.groupingBy { it.position }.eachCount()
+      countNeighbors(robotCountAtPositions.keys)
+    }
+    // Only for visualization
+    val christmasTreeRobotsToVisualize = initialRobots.map { it.move(bestSecond, maxCoords) }
+      .groupingBy { it.position }.eachCount()
+    visualize(christmasTreeRobotsToVisualize, maxCoords)
+    return bestSecond
+  }
+
   val maxCoords = Vec2(101, 103)
 
   part1(100, maxCoords).println()
+  part2(maxCoords).println()
 }
