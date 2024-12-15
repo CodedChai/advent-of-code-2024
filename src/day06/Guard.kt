@@ -11,7 +11,7 @@ data class Guard(
 ) {
   fun getPositionToMoveTo(): Vec2 {
     // Our grid's y coordinates are actually complete inverted
-    return position + direction.movementVec2.copy(y = direction.movementVec2.y * -1)
+    return position + direction.movementVec2.copy(y = direction.movementVec2.y)
   }
 
   fun setInactive(): Guard {
