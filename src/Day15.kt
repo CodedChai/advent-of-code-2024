@@ -48,7 +48,7 @@ fun main() {
     return grid to directions
   }
 
-  fun tilesToMovePart1(
+  fun tilesToMove(
     currentPosition: Vec2,
     grid: Grid<TileType>,
     direction: Direction
@@ -56,14 +56,57 @@ fun main() {
     val currentTile = grid[currentPosition]!!
     return when (currentTile) {
       TileType.ROBOT, TileType.BOX -> {
-        tilesToMovePart1(currentPosition + direction, grid, direction)?.let {
+        tilesToMove(currentPosition + direction, grid, direction)?.let {
           listOf(currentPosition to currentTile) + it
+        }
+      }
+
+      TileType.BOX_LEFT -> {
+        when (direction) {
+          Direction.UP, Direction.DOWN -> {
+            // add right side, right side up as recursive and up as recursive
+            val right = tilesToMove(currentPosition + direction + Direction.RIGHT, grid, direction)
+            val line = tilesToMove(currentPosition + direction, grid, direction)
+            if (right != null && line != null) {
+              listOf(
+                currentPosition to currentTile,
+                currentPosition + Direction.RIGHT to TileType.BOX_RIGHT
+              ) + line + right
+            } else {
+              null
+            }
+          }
+
+          else -> tilesToMove(currentPosition + direction, grid, direction)?.let {
+            listOf(currentPosition to currentTile) + it
+          }
+        }
+      }
+
+      TileType.BOX_RIGHT -> {
+        when (direction) {
+          Direction.UP, Direction.DOWN -> {
+            // add right side, right side up as recursive and up as recursive
+            val left = tilesToMove(currentPosition + direction + Direction.LEFT, grid, direction)
+            val line = tilesToMove(currentPosition + direction, grid, direction)
+            if (left != null && line != null) {
+              listOf(
+                currentPosition to currentTile,
+                currentPosition + Direction.LEFT to TileType.BOX_LEFT
+              ) + line + left
+            } else {
+              null
+            }
+          }
+
+          else -> tilesToMove(currentPosition + direction, grid, direction)?.let {
+            listOf(currentPosition to currentTile) + it
+          }
         }
       }
 
       TileType.EMPTY -> emptyList()
       TileType.WALL -> null
-      else -> error("This is used for part1")
     }
   }
 
@@ -71,7 +114,7 @@ fun main() {
     val (grid, instructions) = readInputPart1()
     val finalGrid = instructions.fold(grid) { currentGrid, direction ->
       val robotPosition = currentGrid.coordinatesToValues.entries.first { it.value == TileType.ROBOT }.key
-      val tilesToMove = tilesToMovePart1(robotPosition, currentGrid, direction) ?: return@fold currentGrid
+      val tilesToMove = tilesToMove(robotPosition, currentGrid, direction) ?: return@fold currentGrid
       val newGrid = currentGrid.deepCopy()
       tilesToMove.forEach { tileToMove ->
         val newPosition = tileToMove.first + direction
@@ -118,74 +161,11 @@ fun main() {
     return grid to directions
   }
 
-  fun tilesToMovePart2(
-    currentPosition: Vec2,
-    grid: Grid<TileType>,
-    direction: Direction
-  ): List<Pair<Vec2, TileType>>? {
-    val currentTile = grid[currentPosition]!!
-    return when (currentTile) {
-      TileType.ROBOT -> {
-        tilesToMovePart2(currentPosition + direction, grid, direction)?.let {
-          listOf(currentPosition to currentTile) + it
-        }
-      }
-
-      TileType.BOX_LEFT -> {
-        when (direction) {
-          Direction.UP, Direction.DOWN -> {
-            // add right side, right side up as recursive and up as recursive
-            val right = tilesToMovePart2(currentPosition + direction + Direction.RIGHT, grid, direction)
-            val line = tilesToMovePart2(currentPosition + direction, grid, direction)
-            if (right != null && line != null) {
-              listOf(
-                currentPosition to currentTile,
-                currentPosition + Direction.RIGHT to TileType.BOX_RIGHT
-              ) + line + right
-            } else {
-              null
-            }
-          }
-
-          else -> tilesToMovePart2(currentPosition + direction, grid, direction)?.let {
-            listOf(currentPosition to currentTile) + it
-          }
-        }
-      }
-
-      TileType.BOX_RIGHT -> {
-        when (direction) {
-          Direction.UP, Direction.DOWN -> {
-            // add right side, right side up as recursive and up as recursive
-            val left = tilesToMovePart2(currentPosition + direction + Direction.LEFT, grid, direction)
-            val line = tilesToMovePart2(currentPosition + direction, grid, direction)
-            if (left != null && line != null) {
-              listOf(
-                currentPosition to currentTile,
-                currentPosition + Direction.LEFT to TileType.BOX_LEFT
-              ) + line + left
-            } else {
-              null
-            }
-          }
-
-          else -> tilesToMovePart2(currentPosition + direction, grid, direction)?.let {
-            listOf(currentPosition to currentTile) + it
-          }
-        }
-      }
-
-      TileType.EMPTY -> emptyList()
-      TileType.WALL -> null
-      else -> error("This is used for part1")
-    }
-  }
-
   fun part2(): Long {
     val (grid, instructions) = readInputPart2()
     val finalGrid = instructions.fold(grid) { currentGrid, direction ->
       val robotPosition = currentGrid.coordinatesToValues.entries.first { it.value == TileType.ROBOT }.key
-      val tilesToMove = tilesToMovePart2(robotPosition, currentGrid, direction) ?: return@fold currentGrid
+      val tilesToMove = tilesToMove(robotPosition, currentGrid, direction) ?: return@fold currentGrid
       val newGrid = currentGrid.deepCopy()
       // Blank out all old positions, then add in all of the new ones
       tilesToMove.onEach { tileToMove ->
