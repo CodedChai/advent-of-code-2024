@@ -143,9 +143,7 @@ fun main() {
                 currentPosition + Direction.RIGHT to TileType.BOX_RIGHT
               ) + line + right
             } else {
-              tilesToMovePart2(currentPosition + direction, grid, direction)?.let {
-                listOf(currentPosition to currentTile) + it
-              }
+              null
             }
           }
 
@@ -167,9 +165,7 @@ fun main() {
                 currentPosition + Direction.LEFT to TileType.BOX_LEFT
               ) + line + left
             } else {
-              tilesToMovePart2(currentPosition + direction, grid, direction)?.let {
-                listOf(currentPosition to currentTile) + it
-              }
+              null
             }
           }
 
@@ -188,23 +184,24 @@ fun main() {
   fun part2(): Long {
     val (grid, instructions) = readInputPart2()
     val finalGrid = instructions.fold(grid) { currentGrid, direction ->
-      visualize(currentGrid)
       val robotPosition = currentGrid.coordinatesToValues.entries.first { it.value == TileType.ROBOT }.key
       val tilesToMove = tilesToMovePart2(robotPosition, currentGrid, direction) ?: return@fold currentGrid
-      tilesToMove.println()
       val newGrid = currentGrid.deepCopy()
-      tilesToMove.forEach { tileToMove ->
+      // Blank out all old positions, then add in all of the new ones
+      tilesToMove.onEach { tileToMove ->
+        newGrid.coordinatesToValues[tileToMove.first] = TileType.EMPTY
+      }.onEach { tileToMove ->
         val newPosition = tileToMove.first + direction
         newGrid.coordinatesToValues[newPosition] = tileToMove.second
       }
-      newGrid.coordinatesToValues[robotPosition] = TileType.EMPTY
       newGrid
     }
 
     visualize(finalGrid)
-    return finalGrid.coordinatesToValues.entries.filter { it.value == TileType.BOX }.sumOf { it.key.x + it.key.y * 100 }
+    return finalGrid.coordinatesToValues.entries.filter { it.value == TileType.BOX_LEFT }
+      .sumOf { it.key.x + it.key.y * 100 }
   }
 
-//  part1().println()
+  part1().println()
   part2().println()
 }
