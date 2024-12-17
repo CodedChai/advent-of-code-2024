@@ -1,5 +1,9 @@
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import kotlin.math.min
-import kotlin.math.pow
+import kotlin.system.measureTimeMillis
 
 private enum class Opcode(val id: Int) {
   ADV(0),
@@ -48,7 +52,7 @@ private data class Computer(
   }
 
   fun adv(): Computer {
-    val newRegisterA = (registerA / 2.0.pow(getComboOperand().toInt())).truncateToMaxInt()
+    val newRegisterA = (registerA shr getComboOperand().toInt()).truncateToMaxInt()
     return copy(registerA = newRegisterA).incrementPointer()
   }
 
@@ -81,19 +85,17 @@ private data class Computer(
   }
 
   fun bdv(): Computer {
-    val newRegisterB = (registerA / 2.0.pow(getComboOperand().toInt())).truncateToMaxInt()
+    val newRegisterB = (registerA shr getComboOperand().toInt()).truncateToMaxInt()
     return copy(registerB = newRegisterB).incrementPointer()
   }
 
   fun cdv(): Computer {
-    val newRegisterC = (registerA / 2.0.pow(getComboOperand().toInt())).truncateToMaxInt()
+    val newRegisterC = (registerA shr getComboOperand().toInt()).truncateToMaxInt()
     return copy(registerC = newRegisterC).incrementPointer()
   }
 
   fun process(): Computer {
     val currentOp = Opcode.entries.first { it.id == program[programPointer] }
-    println(this)
-    println(currentOp)
     return when (currentOp) {
       Opcode.ADV -> adv()
       Opcode.BXL -> bxl()
@@ -132,7 +134,30 @@ fun main() {
 
     return computer.out
   }
+  
+  fun part2(): Int = runBlocking(Dispatchers.Default) {
+    val computer = readInput()
+
+    val results = (0..Int.MAX_VALUE).map {
+      async {
+        var currentComputer = computer.copy(registerA = it.toLong())
+        while (!currentComputer.shouldHalt()) {
+          if (!currentComputer.out.indices.all { index -> currentComputer.out[index] == currentComputer.program[index] }) {
+            break
+          }
+          if (currentComputer.out.size == currentComputer.program.size) {
+            println(it)
+            return@async it
+          }
+          currentComputer = currentComputer.process()
+        }
+        null
+      }
+    }
+
+    results.awaitAll().filterNotNull().minOrNull() ?: -1
+  }
 
   part1().joinToString(",").println()
-
+  measureTimeMillis { part2().println() }.println()
 }
