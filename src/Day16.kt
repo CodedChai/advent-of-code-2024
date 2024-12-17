@@ -51,7 +51,7 @@ private data class Route(
     }
     val newVisited = visited + oldVisited
     val newScore = score + 1
-    val newPriority = newScore + (distance(newPosition, endGoal) * 100)
+    val newPriority = newScore + (distance(newPosition, endGoal))
     return copy(
       currentPosition = newPosition,
       visited = newVisited,
@@ -70,10 +70,14 @@ fun main() {
     }.let { Grid(it) }
   }
 
-  fun visualize(grid: Grid<MazeTileType>) {
+  fun visualize(grid: Grid<MazeTileType>, routePositions: Set<Vec2> = emptySet()) {
     for (y in grid.yIndices) {
       for (x in grid.xIndices) {
-        print(grid.get(x, y)?.char)
+        if (Vec2(x, y) in routePositions) {
+          print("O")
+        } else {
+          print(grid.get(x, y)?.char)
+        }
       }
       print("\n")
     }
@@ -112,8 +116,47 @@ fun main() {
       }
       queue.addAll(routesToAdd)
     }
-    return -1
+    return -1L
+  }
+
+  fun part2(): Int {
+    val maze = readInput()
+    val startingPosition = maze.coordinatesToValues.entries.first { it.value == MazeTileType.START }.key
+    val endingPosition = maze.coordinatesToValues.entries.first { it.value == MazeTileType.END }.key
+
+    val startingRoute = Route(startingPosition)
+    val queue = PriorityQueue<Route>(compareBy { it.priority })
+    queue.add(startingRoute)
+    val positionToBestScore = mutableMapOf<Pair<Vec2, Direction>, Long>()
+    val bestRoutes = mutableSetOf<Route>()
+    while (queue.isNotEmpty()) {
+      val currentRoute = queue.poll()
+      if (currentRoute.currentPosition == endingPosition) {
+        bestRoutes.add(currentRoute)
+        continue
+      }
+
+      val newRoutes =
+        listOfNotNull(currentRoute.stepForward(endingPosition), currentRoute.rotate(true), currentRoute.rotate(false))
+          .filter { maze[it.currentPosition] != MazeTileType.WALL }
+      val routesToAdd = newRoutes.mapNotNull { newRoute ->
+        val key = Pair(newRoute.currentPosition, newRoute.currentDirection)
+        val currentBest = positionToBestScore[key] ?: Long.MAX_VALUE
+        if (newRoute.score > currentBest) {
+          null
+        } else {
+          positionToBestScore[key] = newRoute.score
+          newRoute
+        }
+      }
+      queue.addAll(routesToAdd)
+    }
+
+    val visitedPositions = (bestRoutes.flatMap { route -> route.visited.map { it.first } } + endingPosition).toSet()
+    visualize(maze, visitedPositions)
+    return visitedPositions.size
   }
 
   measureTimeMillis { part1().println() }.println()
+  measureTimeMillis { part2().println() }.println()
 }
