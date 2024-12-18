@@ -20,10 +20,6 @@ fun Long.truncateToMaxInt(): Long {
   return min(this, Int.MAX_VALUE.toLong())
 }
 
-fun Double.truncateToMaxInt(): Long {
-  return this.toLong().truncateToMaxInt()
-}
-
 private data class Computer(
   val registerA: Long, // override set to cap to max int
   val registerB: Long,
@@ -94,10 +90,10 @@ private data class Computer(
     return copy(registerC = newRegisterC).incrementPointer()
   }
 
-  fun process(): Computer {
+  fun process(skipAdv: Boolean = false): Computer {
     val currentOp = Opcode.entries.first { it.id == program[programPointer] }
     return when (currentOp) {
-      Opcode.ADV -> adv()
+      Opcode.ADV -> if (skipAdv) incrementPointer() else adv()
       Opcode.BXL -> bxl()
       Opcode.BST -> bst()
       Opcode.JNZ -> jnz()
@@ -134,7 +130,7 @@ fun main() {
 
     return computer.out
   }
-  
+
   fun part2(): Int = runBlocking(Dispatchers.Default) {
     val computer = readInput()
 
@@ -158,6 +154,77 @@ fun main() {
     results.awaitAll().filterNotNull().minOrNull() ?: -1
   }
 
+  /**
+   *
+   * // For every 8 can I just work backwards?
+   * // Then I'd start from the end and have to add it to the beginning each time
+   * b = a % 8
+   * b = b ^ 7
+   * c = (a >> b).truncateMaxInt()
+   * a = (a >> 3).truncateMaxInt()
+   * b = b ^ 7
+   * b = b ^ c
+   * out(b % 8)
+   * if(a != 0){
+   *     pointer = 0
+   * } else {
+   *     done
+   * }
+   */
+
+  // 265105790796189
+  fun part2Better(previousA: Long, computer: Computer, currentProgramIndex: Int): List<Long>? {
+    if (currentProgramIndex < 0) {
+      return listOf(previousA)
+    }
+    println("$previousA - ${computer.program.subList(0, currentProgramIndex)}")
+    val programValue = computer.program[currentProgramIndex]
+    val answers = (0..7).mapNotNull { currentValueToCheck ->
+      var currComputer = computer.copy(
+        registerA = (previousA shl 3) + currentValueToCheck.toLong(),
+        registerB = 0,
+        registerC = 0,
+        program = computer.program.dropLast(2)
+      )
+      while (!currComputer.shouldHalt()) {
+        currComputer = currComputer.process(true)
+      }
+      if (currComputer.out.size == 1 && currComputer.out.first() == programValue) {
+        part2Better(currComputer.registerA, computer, currentProgramIndex - 1)
+      } else {
+        null
+      }
+//      var a = (previousA shl 3) + currentValueToCheck // TODO: is this right?
+//      var b = a % 8
+//      val c = a shr b.toInt()
+//      // Ignore this one?
+//      a = a shr 3
+//      b = b xor 7
+//      b = b xor c
+//      val out = b % 8
+//      if (out.toInt() == programValue) {
+//        val answer = part2Better(a, program.dropLast(1))
+//        if (answer != null) {
+//          return answer
+//        }
+//      }
+    }.flatten().ifEmpty { return null }
+    return answers
+  }
+
+  fun part2Entry(): List<Long>? {
+    val computer = readInput().copy(registerA = 0, registerB = 0, registerC = 0)
+
+    return part2Better(0L, computer, computer.program.size - 1)?.sorted()?.onEach { a ->
+      var currComputer = computer.copy(registerA = a)
+      while (!currComputer.shouldHalt()) {
+        currComputer = currComputer.process(true)
+      }
+      currComputer.out.println()
+    }
+  }
+
+
   part1().joinToString(",").println()
-  measureTimeMillis { part2().println() }.println()
+  measureTimeMillis { part2Entry().println() }.println()
 }
