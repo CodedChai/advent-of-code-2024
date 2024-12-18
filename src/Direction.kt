@@ -8,7 +8,9 @@ enum class Direction(val movementVec2: Vec2) {
   LEFT_UP(Vec2(-1, -1)),
   LEFT_DOWN(Vec2(-1, 1));
 
-  fun cardinals(): List<Direction> {
-    return listOf(LEFT, RIGHT, UP, DOWN)
+  companion object {
+    fun neighbors(): List<Direction> {
+      return listOf(LEFT, RIGHT, UP, DOWN)
+    }
   }
 }
