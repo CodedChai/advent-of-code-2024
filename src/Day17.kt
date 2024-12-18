@@ -173,58 +173,65 @@ fun main() {
    */
 
   // 265105790796189
-  fun part2Better(previousA: Long, computer: Computer, currentProgramIndex: Int): List<Long>? {
-    if (currentProgramIndex < 0) {
-      return listOf(previousA)
-    }
-    println("$previousA - ${computer.program.subList(0, currentProgramIndex)}")
-    val programValue = computer.program[currentProgramIndex]
-    val answers = (0..7).mapNotNull { currentValueToCheck ->
-      var currComputer = computer.copy(
-        registerA = (previousA shl 3) + currentValueToCheck.toLong(),
-        registerB = 0,
-        registerC = 0,
-        program = computer.program.dropLast(2)
+  fun part2Better(computer: Computer): List<Long> {
+    val answers = mutableListOf<Long>()
+    val queue = ArrayDeque<Pair<Int, Long>>() // offsetFromEnd to a
+    queue.add(1 to 0L)
+    while (queue.isNotEmpty()) {
+      val (currOffset, currA) = queue.removeFirst()
+      if (currOffset > computer.program.size) {
+        answers.add(currA)
+        continue
+      }
+      println(
+        "$currA - ${
+          computer.program.subList(
+            0,
+            computer.program.size - currOffset
+          )
+        } - $currOffset"
       )
-      while (!currComputer.shouldHalt()) {
-        currComputer = currComputer.process(true)
+
+      (0..7).forEach { currentValueToCheck ->
+        val newA = (currA shl 3) + currentValueToCheck.toLong()
+        var currComputer = computer.copy(
+          registerA = newA,
+        )
+        while (!currComputer.shouldHalt()) {
+          if (currComputer.out.size > computer.program.size) {
+            break
+          }
+          currComputer = currComputer.process(false)
+//        currComputer.println()
+        }
+        if (currComputer.out == computer.program.takeLast(currComputer.out.size)) {
+          queue.add((currOffset + 1) to newA)
+        }
       }
-      if (currComputer.out.size == 1 && currComputer.out.first() == programValue) {
-        part2Better(currComputer.registerA, computer, currentProgramIndex - 1)
-      } else {
-        null
-      }
-//      var a = (previousA shl 3) + currentValueToCheck // TODO: is this right?
-//      var b = a % 8
-//      val c = a shr b.toInt()
-//      // Ignore this one?
-//      a = a shr 3
-//      b = b xor 7
-//      b = b xor c
-//      val out = b % 8
-//      if (out.toInt() == programValue) {
-//        val answer = part2Better(a, program.dropLast(1))
-//        if (answer != null) {
-//          return answer
-//        }
-//      }
-    }.flatten().ifEmpty { return null }
-    return answers
+    }
+
+    return answers.also { println("Answers: $it") }
   }
 
-  fun part2Entry(): List<Long>? {
+  fun part2Entry(): Long? {
     val computer = readInput().copy(registerA = 0, registerB = 0, registerC = 0)
-
-    return part2Better(0L, computer, computer.program.size - 1)?.sorted()?.onEach { a ->
+    val part2BetterAnswers = part2Better(computer).sorted()
+    part2BetterAnswers.filter { a ->
       var currComputer = computer.copy(registerA = a)
       while (!currComputer.shouldHalt()) {
+        if (currComputer.out.size > currComputer.program.size) {
+          break
+        }
         currComputer = currComputer.process(true)
       }
       currComputer.out.println()
+      currComputer.out == currComputer.program
     }
+    return part2BetterAnswers.minOrNull()
   }
 
 
   part1().joinToString(",").println()
-  measureTimeMillis { part2Entry().println() }.println()
+  measureTimeMillis { println("Answer: ${part2Entry()}") }.println()
+  println("Done")
 }
