@@ -1,10 +1,3 @@
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
-import kotlin.math.min
-import kotlin.system.measureTimeMillis
-
 private enum class Opcode(val id: Int) {
   ADV(0),
   BXL(1),
@@ -16,12 +9,8 @@ private enum class Opcode(val id: Int) {
   CDV(7),
 }
 
-fun Long.truncateToMaxInt(): Long {
-  return min(this, Int.MAX_VALUE.toLong())
-}
-
 private data class Computer(
-  val registerA: Long, // override set to cap to max int
+  val registerA: Long,
   val registerB: Long,
   val registerC: Long,
   val program: List<Int>,
@@ -43,12 +32,12 @@ private data class Computer(
     }
   }
 
-  fun incrementPointer(amount: Int = 2): Computer {
+  fun incrementPointer(): Computer {
     return copy(programPointer = programPointer + 2)
   }
 
   fun adv(): Computer {
-    val newRegisterA = (registerA shr getComboOperand().toInt()).truncateToMaxInt()
+    val newRegisterA = (registerA shr getComboOperand().toInt())
     return copy(registerA = newRegisterA).incrementPointer()
   }
 
@@ -66,7 +55,7 @@ private data class Computer(
     return if (registerA == 0L) {
       incrementPointer()
     } else {
-      return copy(programPointer = getLiteralOperand())
+      copy(programPointer = getLiteralOperand())
     }
   }
 
@@ -81,19 +70,19 @@ private data class Computer(
   }
 
   fun bdv(): Computer {
-    val newRegisterB = (registerA shr getComboOperand().toInt()).truncateToMaxInt()
+    val newRegisterB = (registerA shr getComboOperand().toInt())
     return copy(registerB = newRegisterB).incrementPointer()
   }
 
   fun cdv(): Computer {
-    val newRegisterC = (registerA shr getComboOperand().toInt()).truncateToMaxInt()
+    val newRegisterC = (registerA shr getComboOperand().toInt())
     return copy(registerC = newRegisterC).incrementPointer()
   }
 
-  fun process(skipAdv: Boolean = false): Computer {
+  fun process(): Computer {
     val currentOp = Opcode.entries.first { it.id == program[programPointer] }
     return when (currentOp) {
-      Opcode.ADV -> if (skipAdv) incrementPointer() else adv()
+      Opcode.ADV -> adv()
       Opcode.BXL -> bxl()
       Opcode.BST -> bst()
       Opcode.JNZ -> jnz()
@@ -131,37 +120,14 @@ fun main() {
     return computer.out
   }
 
-  fun part2(): Int = runBlocking(Dispatchers.Default) {
-    val computer = readInput()
-
-    val results = (0..Int.MAX_VALUE).map {
-      async {
-        var currentComputer = computer.copy(registerA = it.toLong())
-        while (!currentComputer.shouldHalt()) {
-          if (!currentComputer.out.indices.all { index -> currentComputer.out[index] == currentComputer.program[index] }) {
-            break
-          }
-          if (currentComputer.out.size == currentComputer.program.size) {
-            println(it)
-            return@async it
-          }
-          currentComputer = currentComputer.process()
-        }
-        null
-      }
-    }
-
-    results.awaitAll().filterNotNull().minOrNull() ?: -1
-  }
-
   /**
    *
    * // For every 8 can I just work backwards?
    * // Then I'd start from the end and have to add it to the beginning each time
    * b = a % 8
    * b = b ^ 7
-   * c = (a >> b).truncateMaxInt()
-   * a = (a >> 3).truncateMaxInt()
+   * c = (a >> b)
+   * a = (a >> 3)
    * b = b ^ 7
    * b = b ^ c
    * out(b % 8)
@@ -172,7 +138,6 @@ fun main() {
    * }
    */
 
-  // 265105790796189
   fun part2Better(computer: Computer): List<Long> {
     val answers = mutableListOf<Long>()
     val queue = ArrayDeque<Pair<Int, Long>>() // offsetFromEnd to a
@@ -183,6 +148,7 @@ fun main() {
         answers.add(currA)
         continue
       }
+      val instructionToMatch = computer.program[computer.program.size - currOffset]
       println(
         "$currA - ${
           computer.program.subList(
@@ -193,7 +159,7 @@ fun main() {
       )
 
       (0..7).forEach { currentValueToCheck ->
-        val newA = (currA shl 3) + currentValueToCheck.toLong()
+        val newA = (currA shl 3) or currentValueToCheck.toLong()
         var currComputer = computer.copy(
           registerA = newA,
         )
@@ -201,10 +167,9 @@ fun main() {
           if (currComputer.out.size > computer.program.size) {
             break
           }
-          currComputer = currComputer.process(false)
-//        currComputer.println()
+          currComputer = currComputer.process()
         }
-        if (currComputer.out == computer.program.takeLast(currComputer.out.size)) {
+        if (currComputer.out.isNotEmpty() && currComputer.out.first() == instructionToMatch) {
           queue.add((currOffset + 1) to newA)
         }
       }
@@ -222,7 +187,7 @@ fun main() {
         if (currComputer.out.size > currComputer.program.size) {
           break
         }
-        currComputer = currComputer.process(true)
+        currComputer = currComputer.process()
       }
       currComputer.out.println()
       currComputer.out == currComputer.program
@@ -230,8 +195,6 @@ fun main() {
     return part2BetterAnswers.minOrNull()
   }
 
-
   part1().joinToString(",").println()
-  measureTimeMillis { println("Answer: ${part2Entry()}") }.println()
-  println("Done")
+  println("Answer: ${part2Entry()}")
 }
