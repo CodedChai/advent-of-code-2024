@@ -1,3 +1,8 @@
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+
 sealed interface RobotAction {
   fun toDisplay(): String
   data class Move(val direction: Direction) : RobotAction {
@@ -46,63 +51,50 @@ fun main() {
     return joinToString("") { it.toDisplay() }
   }
 
-  fun findPath(buttons: Map<Char, Vec2>, currentPos: Vec2, stringToMatch: String): List<RobotAction> {
+  fun findPath(
+    buttons: Map<Char, Vec2>,
+    currentPos: Vec2,
+    stringToMatch: String,
+  ): List<List<RobotAction>> {
     if (stringToMatch.isEmpty()) {
-      return emptyList()
+      return listOf(emptyList())
     }
     val goalPos = buttons[stringToMatch.first()] ?: error("Failed to find button for ${stringToMatch.first()}")
-
     return if (goalPos == currentPos) {
-      listOf(RobotAction.PressButton) + findPath(buttons, currentPos, stringToMatch.drop(1))
+      findPath(buttons, currentPos, stringToMatch.drop(1)).map { listOf(RobotAction.PressButton) + it }
     } else {
       val directionsToMove = getDirectionsToMove(currentPos, goalPos, buttons)
-      val possibleInputs = directionsToMove.map { dir -> dir to findPath(buttons, currentPos + dir, stringToMatch) }
-      val shortestPath = possibleInputs.minBy { it.second.size }
-      listOf(RobotAction.Move(shortestPath.first)) + shortestPath.second
-    }
-  }
-
-  fun optimize(actions: List<RobotAction>): List<RobotAction> {
-    val splitUpActions = mutableListOf<List<RobotAction.Move>>()
-    var currentActionList = mutableListOf<RobotAction.Move>()
-    for (action in actions) {
-      when (action) {
-        is RobotAction.PressButton -> {
-          splitUpActions.add(currentActionList)
-          currentActionList = mutableListOf()
-        }
-
-        is RobotAction.Move -> {
-          currentActionList.add(action)
+      directionsToMove.flatMap { dir ->
+        findPath(buttons, currentPos + dir, stringToMatch).map {
+          listOf(RobotAction.Move(dir)) + it
         }
       }
     }
-
-    return splitUpActions.map { it.sortedBy { it.direction } }
-      .flatMap { it + RobotAction.PressButton }.also {
-        println("Unoptimized: ${actions.toInputString()} - Optimized: ${it.toInputString()}")
-      }
   }
 
   // Between button presses you should optimize it so that the same ones are in the same order
-  fun findPath(buttons: Map<Char, Vec2>, stringToMatch: String): List<RobotAction> {
+  fun findAllPaths(buttons: Map<Char, Vec2>, stringToMatch: String): List<List<RobotAction>> {
     val startPos = buttons['A']!!
-    val path = findPath(buttons, startPos, stringToMatch)
-    return optimize(path)
+    return findPath(buttons, startPos, stringToMatch)
   }
 
-  // 110902 is too high
-  fun part1(): Long {
+  fun part1(): Long = runBlocking(Dispatchers.Default) {
     val input = readInput("Day21")
     val codeToActions = input.map { code ->
-      val keypadString = findPath(keypad, code).toInputString().also { it.println() }
-      val arrowPad1String = findPath(arrowPad, keypadString).toInputString().also { it.println() }
-      code to findPath(arrowPad, arrowPad1String).toInputString().also { it.println() }
-    }
+      async {
+        val optimalPath = findAllPaths(keypad, code).flatMap { keypadActions ->
+          val arrowPad1Actions = findAllPaths(arrowPad, keypadActions.toInputString())
+          arrowPad1Actions.flatMap { arrowPad1Action ->
+            findAllPaths(arrowPad, arrowPad1Action.toInputString())
+          }
+        }.minBy { it.size }
+        code to optimalPath.toInputString().also { it.println() }
+      }
+    }.awaitAll()
 
     codeToActions.forEach { println("${it.first}: ${it.second}") }
 
-    return codeToActions.sumOf { (code, actionSequence) ->
+    codeToActions.sumOf { (code, actionSequence) ->
       val codeValue = code.filter { it.isDigit() }.toLong()
       val len = actionSequence.length
       println("$codeValue x $len = ${codeValue * len}")
