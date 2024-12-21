@@ -6,7 +6,6 @@ private enum class RaceTileType(val display: Char) {
   WALL('#'),
   START('S'),
   END('E'),
-  ORIGINAL_PATH('O'),
 }
 
 private data class Racer(
