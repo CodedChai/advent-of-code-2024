@@ -22,18 +22,6 @@ fun main() {
     }.toMap(hashMapOf()).let { Grid(it) }
   }
 
-  fun visualize(raceTrack: Grid<RaceTileType>, visited: HashMap<Vec2, Long>) {
-    raceTrack.yIndices.forEach { y ->
-      raceTrack.xIndices.forEach { x ->
-        val pos = Vec2(x, y)
-        val charToPrint = visited[pos]?.let { 'O' } ?: raceTrack[pos]!!.display
-        print(charToPrint)
-      }
-      println()
-    }
-    println()
-  }
-
   fun visualizeCheat(raceTrack: Grid<RaceTileType>, currSpot: Vec2, cheatSpot: Vec2) {
     println()
     raceTrack.yIndices.forEach { y ->
@@ -101,7 +89,11 @@ fun main() {
     }
   }
 
-  fun part1(): Int {
+  fun distance(pos: Vec2, cheatPos: Vec2): Long {
+    return abs(pos.x - cheatPos.x) + abs(pos.y - cheatPos.y)
+  }
+
+  fun raceCheatCount(cheatDistance: Int): Int {
     val maze = readInput()
     val startPos = maze.coordinatesToValues.entries.first { it.value == RaceTileType.START }.key
     val endPos = maze.coordinatesToValues.entries.first { it.value == RaceTileType.END }.key
@@ -109,10 +101,10 @@ fun main() {
     val visitedToSteps = getRacePath(startPos, endPos, maze)
 
     val cheatSavings = visitedToSteps.keys.flatMap { pos ->
-      getNeighborsWithinCheatRange(pos, 2).mapNotNull { cheatPos ->
-
+      getNeighborsWithinCheatRange(pos, cheatDistance).mapNotNull { cheatPos ->
         visitedToSteps[cheatPos]?.let { cheatSteps ->
-          val res = cheatSteps - visitedToSteps[pos]!! - 2
+          val timeUsed = distance(pos, cheatPos)
+          val res = cheatSteps - visitedToSteps[pos]!! - timeUsed
           if (endPos == cheatPos) {
             res - 1
           } else {
@@ -125,6 +117,6 @@ fun main() {
     return cheatSavings.count { it >= 100 }
   }
 
-  part1().println()
-
+  raceCheatCount(2).println()
+  raceCheatCount(20).println()
 }
