@@ -8,11 +8,6 @@ private enum class RaceTileType(val display: Char) {
   END('E'),
 }
 
-private data class Racer(
-  val pos: Vec2,
-  val path: Set<Vec2>,
-)
-
 fun main() {
 
   fun readInput(): Grid<RaceTileType> {
