@@ -83,9 +83,6 @@ fun main() {
     }
   }
 
-  fun distance(pos: Vec2, cheatPos: Vec2): Long {
-    return abs(pos.x - cheatPos.x) + abs(pos.y - cheatPos.y)
-  }
 
   fun raceCheatCount(cheatDistance: Int): Int {
     val maze = readInput()
@@ -97,7 +94,7 @@ fun main() {
     val cheatSavings = visitedToSteps.keys.flatMap { pos ->
       getNeighborsWithinCheatRange(pos, cheatDistance).mapNotNull { cheatPos ->
         visitedToSteps[cheatPos]?.let { cheatSteps ->
-          val timeUsed = distance(pos, cheatPos)
+          val timeUsed = pos.manhattanDistance(cheatPos)
           val res = cheatSteps - visitedToSteps[pos]!! - timeUsed
           if (endPos == cheatPos) {
             res - 1

@@ -10,7 +10,7 @@ enum class Direction(val movementVec2: Vec2) {
 
   companion object {
     fun neighbors(): List<Direction> {
-      return listOf(LEFT, RIGHT, UP, DOWN)
+      return listOf(UP, DOWN, LEFT, RIGHT)
     }
   }
 }

@@ -1,3 +1,5 @@
+import kotlin.math.abs
+
 data class Vec2(
   val x: Long,
   val y: Long,
@@ -41,5 +43,9 @@ data class Vec2(
 
   operator fun rem(other: Vec2): Vec2 {
     return Vec2(x % other.x, y % other.y)
+  }
+
+  fun manhattanDistance(other: Vec2): Long {
+    return abs(x - other.x) + abs(y - other.y)
   }
 }
