@@ -1,6 +1,4 @@
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
 sealed interface RobotAction {
@@ -37,6 +35,11 @@ fun main() {
     '<' to Vec2(0, 1), 'v' to Vec2(1, 1), '>' to Vec2(2, 1),
   )
 
+  /**
+   * if we have from x key to y key length (manh dist???) then we can use that
+   *
+   */
+
   fun getDirectionsToMove(currentPos: Vec2, goalPos: Vec2, buttons: Map<Char, Vec2>) =
     Direction.neighbors().mapNotNull { direction ->
       val potentialNewDir = currentPos + direction
@@ -50,6 +53,13 @@ fun main() {
   fun List<RobotAction>.toInputString(): String {
     return joinToString("") { it.toDisplay() }
   }
+
+  data class CacheKey(
+    val recursionLevel: Int,
+    val str: String,
+  )
+
+  val cache = hashMapOf<CacheKey, Int>()
 
   fun findPath(
     buttons: Map<Char, Vec2>,
@@ -78,30 +88,38 @@ fun main() {
     return findPath(buttons, startPos, stringToMatch)
   }
 
-  fun part1(): Long = runBlocking(Dispatchers.Default) {
+
+  fun getSolution(numArrowKeyRobots: Int): Long = runBlocking(Dispatchers.Default) {
     val input = readInput("Day21")
-    val codeToActions = input.map { code ->
-      async {
-        val optimalPath = findAllPaths(keypad, code).flatMap { keypadActions ->
-          val arrowPad1Actions = findAllPaths(arrowPad, keypadActions.toInputString())
-          arrowPad1Actions.flatMap { arrowPad1Action ->
-            findAllPaths(arrowPad, arrowPad1Action.toInputString())
+    val codeToShortestPath = input.map { code ->
+      val keypadRobots = listOf(findAllPaths(keypad, code).minBy { it.size })
+      code to keypadRobots.sumOf { keypadRobot ->
+        (0 until numArrowKeyRobots).sumOf { recursionLevel ->
+          val robotActionString = keypadRobot.toInputString()
+          (1 until robotActionString.length).sumOf { index ->
+            val oldChar = robotActionString[index - 1]
+            val currChar = robotActionString[index]
+            val startPos = arrowPad[oldChar]!!
+            val key = CacheKey(recursionLevel, "$oldChar$currChar")
+            cache.getOrPut(key) {
+              findPath(
+                arrowPad,
+                startPos,
+                currChar.toString()
+              ).minOf { it.size } // TODO: This isn't working right, we need to consider the counts of the sub robots? Or at least the fact that we have to move the sub robots
+            }
           }
-        }.minBy { it.size }
-        code to optimalPath.toInputString().also { it.println() }
+        }
       }
-    }.awaitAll()
-
-    codeToActions.forEach { println("${it.first}: ${it.second}") }
-
-    codeToActions.sumOf { (code, actionSequence) ->
+    }
+    cache.println()
+    codeToShortestPath.sumOf { (code, len) ->
       val codeValue = code.filter { it.isDigit() }.toLong()
-      val len = actionSequence.length
       println("$codeValue x $len = ${codeValue * len}")
       codeValue * len
     }
   }
 
-  part1().println()
+  getSolution(2).println()
 
 }
