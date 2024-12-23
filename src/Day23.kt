@@ -28,7 +28,6 @@ fun main() {
     }
   }
 
-
   fun groupingsOfThree(computers: Set<String>): List<Grouping> {
     if (computers.size < 3) {
       return emptyList()
@@ -53,7 +52,7 @@ fun main() {
     return combos
   }
 
-  fun part1(): Long {
+  fun part1(): Int {
     val input = readInput()
 
     val lanNetwork = hashMapOf<String, Set<String>>()
@@ -71,12 +70,50 @@ fun main() {
       .distinctBy { it.setOfComputers() }
       .filter { it.anyComputerStartsWith("t") }.toList()
 
-//    isFullyConnected("aq", "cg", "yn", lanNetwork).println()
-
-    groupings.println()
-    groupings.size.println()
-    return -1L
+    return groupings.size
   }
 
-  part1()
+  fun part2(): String {
+    val input = readInput()
+
+    val lanNetwork = hashMapOf<String, Set<String>>()
+    input.forEach { pair ->
+      val computer1 = pair.first
+      val computer2 = pair.second
+      lanNetwork[computer1] = (lanNetwork[computer1].orEmpty()) + computer2
+      lanNetwork[computer2] = (lanNetwork[computer2].orEmpty()) + computer1
+    }
+
+    val visitedConnections = hashSetOf<Set<String>>()
+    fun createMeshNetwork(
+      network: Map<String, Set<String>>,
+      currentComputer: String,
+      existingConnections: Set<String>
+    ) {
+      if (!visitedConnections.add(existingConnections)) {
+        return
+      }
+
+      for (connectedComputer in network[currentComputer]!!) {
+        if (connectedComputer in existingConnections) {
+          continue
+        } else if (!network[connectedComputer].orEmpty().containsAll(existingConnections)) {
+          continue
+        }
+
+        createMeshNetwork(network, connectedComputer, existingConnections + connectedComputer)
+      }
+    }
+
+    val allComputers = lanNetwork.keys.toSet()
+
+    allComputers.forEach { computer ->
+      createMeshNetwork(lanNetwork, computer, setOf(computer))
+    }
+    val largestNetwork = visitedConnections.maxBy { it.size }
+    return largestNetwork.sorted().joinToString(",")
+  }
+
+  part1().println()
+  part2().println()
 }
