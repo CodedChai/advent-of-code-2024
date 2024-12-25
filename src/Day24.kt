@@ -10,10 +10,6 @@ private data class Gate(
   val op: Op,
   val resultName: String,
 ) {
-  fun wires(): Set<String> {
-    return setOf(wire1, wire2)
-  }
-
   fun compute(resultsMap: Map<String, Boolean>): Boolean {
     val value1 = resultsMap[wire1]!!
     val value2 = resultsMap[wire2]!!
@@ -154,5 +150,4 @@ fun main() {
   part1().println()
   visualize()
   part2().println()
-
 }
