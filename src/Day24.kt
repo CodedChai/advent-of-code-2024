@@ -94,11 +94,6 @@ fun main() {
     }
   }
 
-  data class Swap(
-    val oldGates: Set<Gate>,
-    val newGates: Set<Gate>,
-  )
-
   fun visualize() {
     val (_, gates) = readInput()
     val z = gates.filter { it.resultName.startsWith("z") }.map { it.resultName }.sorted().joinToString("->")
@@ -150,6 +145,8 @@ fun main() {
       resultsMap.filter { it.key.startsWith("y", true) }.toSortedMap().map { it.value }.reversed().toLong()
     val expectedResult = (expectedX + expectedY)
     val result = computeResult(resultsMap, gates)
+
+    calculateDifference((expectedX + expectedY).toBooleanList(), result).println()
     println("Diff: " + (expectedResult - result.toLong()))
     return (expectedResult - result.toLong())
   }
