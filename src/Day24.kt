@@ -5,18 +5,18 @@ private enum class Op {
 }
 
 private data class Gate(
-  val gate1: String,
-  val gate2: String,
+  val wire1: String,
+  val wire2: String,
   val op: Op,
   val resultName: String,
 ) {
-  fun gates(): Set<String> {
-    return setOf(gate1, gate2)
+  fun wires(): Set<String> {
+    return setOf(wire1, wire2)
   }
 
   fun compute(resultsMap: Map<String, Boolean>): Boolean {
-    val value1 = resultsMap[gate1]!!
-    val value2 = resultsMap[gate2]!!
+    val value1 = resultsMap[wire1]!!
+    val value2 = resultsMap[wire2]!!
     return when (op) {
       Op.AND -> value1 and value2
       Op.OR -> value1 or value2
@@ -27,7 +27,7 @@ private data class Gate(
 
 fun main() {
 
-  fun readInput(): Pair<MutableMap<String, Boolean>, MutableList<Gate>> {
+  fun readInput(): Pair<Map<String, Boolean>, List<Gate>> {
     val input = readInput("Day24")
     val initialResults = input.takeWhile { it.isNotEmpty() }
 
@@ -42,14 +42,14 @@ fun main() {
       val op = Op.entries.first { it.name in line }
       val split = line.split(" ")
       Gate(
-        gate1 = split[0],
-        gate2 = split[2],
+        wire1 = split[0],
+        wire2 = split[2],
         op = op,
         resultName = split.last()
       )
     }
 
-    return resultsMap.toMutableMap() to gates.toMutableList()
+    return resultsMap to gates
   }
 
   fun List<Boolean>.toLong(): Long {
@@ -58,23 +58,104 @@ fun main() {
     }
   }
 
-  fun part1(): Long {
-    val (resultsMap, gates) = readInput()
-
-    while (gates.isNotEmpty()) {
-      val gate = gates.first { gate ->
-        gate.gate1 in resultsMap.keys && gate.gate2 in resultsMap.keys
-      }
-      resultsMap[gate.resultName] = gate.compute(resultsMap)
-      gates.remove(gate)
+  fun Long.toBooleanList(): List<Boolean> {
+    if (this == 0L) return listOf(false)
+    val bits = mutableListOf<Boolean>()
+    var tmp = this
+    while (tmp > 0) {
+      bits.add(0, (tmp and 1) == 1L)
+      tmp = tmp shr 1
     }
-
-    val zBits = resultsMap.filter { it.key.startsWith("z", true) }.toSortedMap().map { it.value }.reversed()
-    zBits.println()
-    resultsMap.println()
-    return zBits.toLong()
+    return bits
   }
 
-  readInput().println()
+  fun computeResult(resultsMap: Map<String, Boolean>, gates: List<Gate>): List<Boolean> {
+    val mutableResultsMap = resultsMap.toMutableMap()
+    val mutableGates = gates.toMutableList()
+    while (mutableGates.isNotEmpty()) {
+      val gate = mutableGates.first { gate ->
+        gate.wire1 in mutableResultsMap.keys && gate.wire2 in mutableResultsMap.keys
+      }
+      mutableResultsMap[gate.resultName] = gate.compute(mutableResultsMap)
+      mutableGates.remove(gate)
+    }
+
+    return mutableResultsMap.filter { it.key.startsWith("z", true) }.toSortedMap().map { it.value }.reversed()
+  }
+
+  fun part1(): Long {
+    val (resultsMap, gates) = readInput()
+    return computeResult(resultsMap, gates).toLong()
+  }
+
+  fun calculateDifference(expectedResult: List<Boolean>, result: List<Boolean>): Int {
+    return expectedResult.zip(result).count { (expected, res) ->
+      expected != res
+    }
+  }
+
+  data class Swap(
+    val oldGates: Set<Gate>,
+    val newGates: Set<Gate>,
+  )
+
+  fun visualize() {
+    val (_, gates) = readInput()
+    val z = gates.filter { it.resultName.startsWith("z") }.map { it.resultName }.sorted().joinToString("->")
+    val x = z.replace('z', 'x')
+    val y = z.replace('z', 'y')
+
+    println(
+      """
+        digraph G {
+            subgraph {
+               node [style=filled,color=green]
+                $z
+            }
+            subgraph {
+                node [style=filled,color=gray]
+                $x
+            }
+            subgraph {
+                node [style=filled,color=gray]
+                $y
+            }
+            subgraph {
+                node [style=filled,color=pink]
+                ${gates.filter { gate -> gate.op == Op.AND }.joinToString(" ") { gate -> gate.resultName }}
+            }
+            subgraph {
+                node [style=filled,color=yellow];
+                ${gates.filter { gate -> gate.op == Op.OR }.joinToString(" ") { gate -> gate.resultName }}
+            }
+            subgraph {
+                node [style=filled,color=lightblue];
+                ${gates.filter { gate -> gate.op == Op.XOR }.joinToString(" ") { gate -> gate.resultName }}
+            }
+            """.trimIndent()
+    )
+    gates.forEach { (left, right, _, out) ->
+      println("    $left -> $out")
+      println("    $right -> $out")
+    }
+    println("}")
+  }
+
+  fun part2(): Long {
+    val (resultsMap, gates) = readInput()
+
+    val expectedX =
+      resultsMap.filter { it.key.startsWith("x", true) }.toSortedMap().map { it.value }.reversed().toLong()
+    val expectedY =
+      resultsMap.filter { it.key.startsWith("y", true) }.toSortedMap().map { it.value }.reversed().toLong()
+    val expectedResult = (expectedX + expectedY)
+    val result = computeResult(resultsMap, gates)
+    println("Diff: " + (expectedResult - result.toLong()))
+    return (expectedResult - result.toLong())
+  }
+
   part1().println()
+  visualize()
+  part2().println()
+
 }
